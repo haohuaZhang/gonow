@@ -241,9 +241,17 @@ function enhanceFoods(seasonInfo) {
   const cityRank = {};
   seasonCities.forEach((city, idx) => { cityRank[city] = idx; });
 
+  const cityLocations = {
+    '汕头': { name: '汕头市', lat: 23.3535, lng: 116.6818, address: '广东省汕头市' },
+    '成都': { name: '成都市', lat: 30.5728, lng: 104.0668, address: '四川省成都市' },
+    '长沙': { name: '长沙市', lat: 28.2282, lng: 112.9388, address: '湖南省长沙市' },
+    '重庆': { name: '重庆市', lat: 29.4316, lng: 106.9123, address: '重庆市' },
+  };
+
   return BUILTIN_FOODS
     .map((food) => ({
       ...food,
+      location: cityLocations[food.city] || { name: food.city, lat: 0, lng: 0, address: food.city },
       trendingReason: generateTrendingReason(TRENDING_TEMPLATES.food, food.name, seasonInfo.season),
       trendingRank: (cityRank[food.city] ?? 99) + 1,
       isSeasonal: (cityRank[food.city] ?? 99) < 4,
@@ -252,8 +260,15 @@ function enhanceFoods(seasonInfo) {
 }
 
 function enhanceScenic(seasonInfo) {
+  const planTypeMap = { '主流': 'mainstream', '经济': 'economy', '深度': 'deep', '特殊': 'special' };
+
   return BUILTIN_SCENIC.map((scenic) => ({
     ...scenic,
+    scenicName: scenic.name,
+    plans: (scenic.plans || []).map((plan) => ({
+      ...plan,
+      planType: planTypeMap[plan.type] || plan.type,
+    })),
     trendingReason: generateTrendingReason(TRENDING_TEMPLATES.scenic, scenic.name, seasonInfo.season),
   }));
 }
