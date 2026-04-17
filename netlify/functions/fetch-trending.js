@@ -52,8 +52,8 @@ const LLM_CONFIGS = {
           { role: 'system', content: TRENDING_SYSTEM_PROMPT },
           { role: 'user', content: message },
         ],
-        max_tokens: 4096,
-        temperature: 0.8,
+        max_tokens: 2048,
+        temperature: 0.7,
       }),
     }),
     parseResponse: (data) => data.choices?.[0]?.message?.content || '',
@@ -75,8 +75,8 @@ const LLM_CONFIGS = {
           { role: 'system', content: TRENDING_SYSTEM_PROMPT },
           { role: 'user', content: message },
         ],
-        max_tokens: 4096,
-        temperature: 0.8,
+        max_tokens: 2048,
+        temperature: 0.7,
       }),
     }),
     parseResponse: (data) => data.choices?.[0]?.message?.content || '',
@@ -98,8 +98,8 @@ const LLM_CONFIGS = {
           },
         ],
         generationConfig: {
-          maxOutputTokens: 4096,
-          temperature: 0.8,
+          maxOutputTokens: 2048,
+          temperature: 0.7,
         },
       }),
     }),
@@ -179,7 +179,7 @@ function getAvailableLLMs() {
 /**
  * 调用单个 LLM（带超时控制）
  */
-async function callLLM(llm, message, timeoutMs = 30000) {
+async function callLLM(llm, message, timeoutMs = 8000) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -275,7 +275,7 @@ const GRADIENT_COLORS = [
 function buildDestinationsPrompt(seasonInfo) {
   return `当前时间：${seasonInfo.dateStr}，当前季节：${seasonInfo.season}（${seasonInfo.seasonDesc}）。
 
-请根据小红书、飞猪、携程、马蜂窝等平台的热门数据，推荐当前月份最值得去的 8 个国内旅行目的地。
+请根据小红书、飞猪、携程、马蜂窝等平台的热门数据，推荐当前月份最值得去的 6 个国内旅行目的地。
 
 要求：
 1. 每个目的地必须包含完整的字段信息
@@ -315,7 +315,7 @@ function buildDestinationsPrompt(seasonInfo) {
 function buildFoodPrompt(seasonInfo) {
   return `当前时间：${seasonInfo.dateStr}，当前季节：${seasonInfo.season}（${seasonInfo.seasonDesc}）。
 
-请根据小红书、大众点评、美团、携程美食林等平台的热门数据，推荐当前月份最值得打卡的 8 家国内餐厅/美食。
+请根据小红书、大众点评、美团、携程美食林等平台的热门数据，推荐当前月份最值得打卡的 6 家国内餐厅/美食。
 
 要求：
 1. 每个美食推荐必须包含完整的字段信息
@@ -355,7 +355,7 @@ function buildFoodPrompt(seasonInfo) {
 function buildScenicPrompt(seasonInfo) {
   return `当前时间：${seasonInfo.dateStr}，当前季节：${seasonInfo.season}（${seasonInfo.seasonDesc}）。
 
-请根据小红书、携程、马蜂窝、飞猪等平台的热门数据，推荐当前月份最值得游览的 6 个国内热门景点，并为每个景点提供多种游玩方案。
+请根据小红书、携程、马蜂窝、飞猪等平台的热门数据，推荐当前月份最值得游览的 4 个国内热门景点，并为每个景点提供多种游玩方案。
 
 要求：
 1. 每个景点必须包含完整的字段信息
