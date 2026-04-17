@@ -15,7 +15,7 @@
  * - 只有 2 个成功 → 用其中一个验证另一个
  */
 
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 
 // ============ CORS 响应头 ============
 
@@ -142,7 +142,7 @@ const LLM_CONFIGS = {
  */
 function generateSessionId() {
   try {
-    return uuidv4();
+    return crypto.randomUUID();
   } catch {
     return 'session-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9);
   }

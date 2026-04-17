@@ -8,7 +8,7 @@
  * - 否则降级到 Mock 模式
  */
 
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 
 // ============ CORS 响应头 ============
 
@@ -224,7 +224,7 @@ const KNOWN_CITIES = [
  */
 function generateSessionId() {
   try {
-    return uuidv4();
+    return crypto.randomUUID();
   } catch {
     // 备用方案：使用时间戳 + 随机数
     return 'session-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9);
