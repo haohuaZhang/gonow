@@ -233,6 +233,8 @@ export interface FoodRecommendation {
   signatureDishes: string[];
   /** 图片URL */
   imageUrl?: string;
+  /** 所属城市 */
+  city?: string;
 }
 
 // ============ 通用类型 ============

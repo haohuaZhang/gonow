@@ -7,6 +7,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import type { Activity, ChatMessage, DebateResult, Trip } from '@/types'
 import { createProtectedStateStorage } from '@/lib/storage'
+import { mockTrip } from '@/lib/mock-data'
 
 /** Store 状态接口 */
 interface TripStore {
@@ -56,40 +57,232 @@ function now(): string {
   return new Date().toISOString()
 }
 
-/** 模拟 AI 回复内容 */
-function getMockAIReply(userContent: string): string {
-  const lower = userContent.toLowerCase()
-
-  if (lower.includes('日本') || lower.includes('东京') || lower.includes('大阪')) {
-    return '日本是个很棒的旅行目的地！我为你推荐以下行程安排：\n\n**Day 1 - 东京探索**\n- 上午：浅草寺、雷门\n- 下午：秋叶原、银座购物\n- 晚上：涩谷十字路口、新宿歌舞伎町\n\n**Day 2 - 文化体验**\n- 上午：明治神宫、原宿\n- 下午：上野公园、博物馆\n- 晚上：东京塔夜景\n\n需要我帮你细化每天的行程，或者调整预算吗？'
-  }
-
-  if (lower.includes('泰国') || lower.includes('曼谷') || lower.includes('清迈')) {
-    return '泰国之旅听起来很棒！这是我的推荐方案：\n\n**Day 1 - 曼谷经典**\n- 大皇宫、玉佛寺\n- 卧佛寺泰式按摩\n- 考山路夜市\n\n**Day 2 - 美食之旅**\n- 水上市场早餐\n- 暹罗商圈购物\n- 唐人街美食探索\n\n需要我帮你安排住宿和交通吗？'
-  }
-
-  if (lower.includes('预算') || lower.includes('花费') || lower.includes('费用')) {
-    return '关于预算规划，我有以下建议：\n\n1. **住宿**：建议占总预算的 30-40%\n2. **餐饮**：建议占总预算的 20-30%\n3. **交通**：建议占总预算的 15-20%\n4. **景点门票**：建议占总预算的 10-15%\n5. **购物及其他**：预留 10% 弹性空间\n\n你可以告诉我你的总预算和目的地，我来帮你做更详细的分配。'
-  }
-
-  return '收到你的旅行需求！让我来帮你规划一下。\n\n为了给你更好的建议，你可以告诉我：\n- 你想去哪里？\n- 计划玩几天？\n- 大概的预算是多少？\n- 有什么特别的偏好？（美食、文化、冒险等）\n\n我会根据你的需求生成一份完整的行程方案。'
+/** 城市描述映射 */
+const CITY_DESCRIPTIONS: Record<string, string> = {
+  '汕头': '潮汕美食之都，牛肉火锅、卤鹅、肠粉...吃货的天堂！',
+  '潮州': '潮州古城，广济桥、牌坊街、工夫茶文化！',
+  '揭阳': '揭阳古邑，进贤门、揭阳楼、潮汕文化发源地！',
+  '成都': '天府之国，火锅、熊猫、宽窄巷子，巴适得很！',
+  '杭州': '人间天堂，西湖美景、龙井茶香、丝绸之府！',
+  '重庆': '山城重庆，火锅之都、洪崖洞、穿楼轻轨！',
+  '西安': '十三朝古都，兵马俑、回民街、大唐不夜城！',
+  '厦门': '海上花园，鼓浪屿、沙茶面、文艺小清新的好去处！',
+  '长沙': '星城长沙，臭豆腐、茶颜悦色、橘子洲头！',
+  '广州': '花城广州，早茶文化、粤式美食、珠江夜景！',
+  '深圳': '创新之城，世界之窗、欢乐谷、海滨风光！',
+  '北京': '首都北京，故宫长城、胡同文化、烤鸭飘香！',
+  '上海': '魔都上海，外滩夜景、东方明珠、海派文化！',
+  '三亚': '东方夏威夷，碧海蓝天、椰林沙滩、热带天堂！',
+  '丽江': '艳遇之城，古城韵味、玉龙雪山、纳西风情！',
+  '桂林': '山水甲天下，漓江竹筏、阳朔西街、龙脊梯田！',
+  '青岛': '帆船之都，红瓦绿树、碧海蓝天、啤酒飘香！',
+  '大理': '风花雪月，苍山洱海、古城漫步、白族风情！',
+  '苏州': '上有天堂下有苏杭，园林之城、昆曲评弹、江南水乡！',
+  '南京': '六朝古都，中山陵、夫子庙、秦淮河畔！',
+  '武汉': '江城武汉，热干面、黄鹤楼、东湖樱花！',
+  '昆明': '春城昆明，四季如春、石林奇观、鲜花之城！',
+  '贵阳': '避暑之都，酸汤鱼、甲秀楼、黄果树瀑布！',
+  '拉萨': '日光之城，布达拉宫、大昭寺、藏式风情！',
+  '哈尔滨': '冰城哈尔滨，冰雪大世界、中央大街、欧式建筑！',
+  '东京': '日本首都，动漫天堂、美食圣地、购物天堂！',
+  '首尔': '韩流之都，景福宫、明洞、韩式烤肉！',
+  '曼谷': '天使之城，大皇宫、水上市场、泰式按摩！',
+  '巴黎': '浪漫之都，埃菲尔铁塔、卢浮宫、塞纳河畔！',
+  '伦敦': '雾都伦敦，大本钟、白金汉宫、大英博物馆！',
+  '纽约': '不夜城，自由女神、时代广场、百老汇！',
 }
 
-/** AI 回复后的建议追问 */
-function getSuggestions(userContent: string): string[] {
-  const lower = userContent.toLowerCase()
+/** 地区别名映射 */
+const REGION_ALIASES: Record<string, string> = {
+  '潮汕': '汕头',
+  '长三角': '杭州',
+  '珠三角': '广州',
+  '京津冀': '北京',
+  '闽南': '厦门',
+  '胶东': '青岛',
+  '川西': '成都',
+}
 
-  if (lower.includes('日本') || lower.includes('东京')) {
-    return ['帮我安排住宿', '推荐当地美食', '预算控制在5000以内', '增加京都行程']
+/** 城市列表（用于识别） */
+const CITY_LIST = Object.keys(CITY_DESCRIPTIONS)
+
+/** 识别用户输入中的城市/地区 */
+function detectCity(text: string): string | null {
+  // 先检查地区别名
+  for (const [alias, city] of Object.entries(REGION_ALIASES)) {
+    if (text.includes(alias)) return city
   }
-  if (lower.includes('泰国') || lower.includes('曼谷')) {
-    return ['推荐当地美食', '安排交通方案', '增加清迈行程', '预算控制在3000以内']
+  // 再检查城市名
+  for (const city of CITY_LIST) {
+    if (text.includes(city)) return city
   }
-  if (lower.includes('预算') || lower.includes('花费')) {
-    return ['推荐经济型住宿', '如何省钱', '帮我规划5天行程', '推荐自由行还是跟团']
+  return null
+}
+
+/** 识别用户输入中的日期/时长信息 */
+function detectDateInfo(text: string): boolean {
+  const patterns = [
+    /周末/, /\d+天/, /\d+日/, /\d+晚/,
+    /五一/, /国庆/, /春节/, /清明/, /端午/, /中秋/,
+    /\d+月\d+日/, /\d+月/, /假期/, /休假/,
+  ]
+  return patterns.some((p) => p.test(text))
+}
+
+/** 识别用户输入中的人数信息 */
+function detectPeopleInfo(text: string): boolean {
+  const patterns = [
+    /\d+[个人]/, /一个人/, /情侣/, /老婆/, /老公/, /夫妻/,
+    /家庭/, /朋友/, /亲子/, /带娃/, /全家/, /俩人/,
+  ]
+  return patterns.some((p) => p.test(text))
+}
+
+/** 识别用户输入中的预算信息 */
+function detectBudgetInfo(text: string): boolean {
+  const patterns = [
+    /\d+千/, /\d+万/, /\d+块/, /预算/, /花费/, /费用/, /花多少/,
+    /多少钱/, /大概.*元/,
+  ]
+  return patterns.some((p) => p.test(text))
+}
+
+/** 智能推荐目的地（当用户没有指定目的地时） */
+function recommendDestinations(text: string): string[] {
+  // 根据关键词推荐
+  if (text.includes('美食') || text.includes('吃') || text.includes('吃货')) {
+    return [
+      '汕头 - 潮汕美食之都，牛肉火锅、卤鹅、肠粉，人均50吃到撑',
+      '成都 - 火锅、串串、小吃一条街，巴适得很',
+      '广州 - 早茶文化、粤式美食、珠江夜景',
+    ]
+  }
+  if (text.includes('海') || text.includes('沙滩') || text.includes('海边') || text.includes('度假')) {
+    return [
+      '三亚 - 东方夏威夷，碧海蓝天、椰林沙滩',
+      '厦门 - 海上花园，鼓浪屿、文艺小清新',
+      '青岛 - 帆船之都，红瓦绿树、碧海蓝天',
+    ]
+  }
+  if (text.includes('文化') || text.includes('历史') || text.includes('古城') || text.includes('古都')) {
+    return [
+      '西安 - 十三朝古都，兵马俑、大唐不夜城',
+      '南京 - 六朝古都，中山陵、秦淮河畔',
+      '北京 - 故宫长城、胡同文化、烤鸭飘香',
+    ]
+  }
+  if (text.includes('情侣') || text.includes('浪漫') || text.includes('约会')) {
+    return [
+      '丽江 - 古城韵味、玉龙雪山、纳西风情',
+      '大理 - 风花雪月、苍山洱海、白族风情',
+      '厦门 - 海上花园、文艺小清新、鼓浪屿',
+    ]
+  }
+  // 默认推荐
+  return [
+    '汕头 - 潮汕美食之都，吃货必去',
+    '成都 - 天府之国，火锅熊猫巴适得很',
+    '三亚 - 东方夏威夷，碧海蓝天度假胜地',
+  ]
+}
+
+/** 统一 Mock AI 回复函数，返回回复内容、建议追问和行程数据 */
+function getMockAIResult(userContent: string): { reply: string; suggestions: string[]; tripData: Trip | null } {
+  const city = detectCity(userContent)
+  const hasDate = detectDateInfo(userContent)
+  const hasPeople = detectPeopleInfo(userContent)
+  const hasBudget = detectBudgetInfo(userContent)
+
+  // 场景 a：完整信息（目的地 + 日期 + 人数）→ 生成行程概要
+  if (city && hasDate && hasPeople) {
+    const reply = `太好了！我已经为你收集到足够的信息，正在为你生成${city}的专属行程...
+
+✅ 行程已生成！你可以查看详细的每日安排，包括：
+• 精选景点和活动推荐
+• 当地特色美食探店
+• 红黑榜避坑指南
+• 费用预算参考
+
+如果需要调整，随时告诉我！`
+
+    const suggestions = [
+      `${city}有什么必去的地方？`,
+      `帮我调整行程安排`,
+      `推荐${city}的住宿`,
+      `${city}有什么特色美食？`,
+    ]
+
+    const tripData: Trip = {
+      ...mockTrip,
+      id: generateId(),
+      destination: city,
+      description: `${city}旅行行程`,
+      createdAt: now(),
+      updatedAt: now(),
+    }
+
+    return { reply, suggestions, tripData }
   }
 
-  return ['推荐去日本旅行', '推荐去泰国旅行', '帮我规划5天行程', '预算控制在5000以内']
+  // 场景 b：有目的地但缺信息 → 确认目的地 + 问缺失信息
+  if (city) {
+    const cityDesc = CITY_DESCRIPTIONS[city] || `${city}是个很棒的选择！`
+    const missing: string[] = []
+    if (!hasDate) missing.push('• 计划什么时候去？玩几天？')
+    if (!hasPeople) missing.push('• 一共几个人去？')
+    if (!hasBudget) missing.push('• 大概的预算是多少？')
+
+    const reply = `好的！${city}是个很棒的选择！${cityDesc}
+
+为了给你规划最合适的行程，我还需要了解：
+${missing.join('\n')}
+
+你可以一次性告诉我，也可以慢慢聊～`
+
+    const suggestions = [
+      `${city}2天1夜，2个人，预算2000`,
+      `五一去${city}，3个人，喜欢美食`,
+      `${city}有什么必去的地方？`,
+      `帮我调整行程安排`,
+    ]
+
+    return { reply, suggestions, tripData: null }
+  }
+
+  // 场景 c：只有偏好没有目的地 → 推荐目的地
+  if (hasDate || hasPeople || hasBudget || userContent.length > 2) {
+    const destinations = recommendDestinations(userContent)
+    const reply = `根据你的偏好，我为你推荐以下目的地：
+${destinations.map((d) => `• ${d}`).join('\n')}
+
+你对哪个感兴趣？告诉我，我帮你详细规划！`
+
+    const suggestions = [
+      '我想去汕头玩2天',
+      '五一假期有什么推荐？',
+      '推荐一个适合情侣的周末旅行',
+      '两个人去成都大概要花多少钱？',
+    ]
+
+    return { reply, suggestions, tripData: null }
+  }
+
+  // 场景 d：完全无法理解 → 通用引导
+  const reply = `我理解你的意思！不过为了给你更好的推荐，你可以试试这样告诉我：
+• "我想去 [城市] 玩 [几天]"
+• "[城市] [几月] 去，[几] 个人"
+• "帮我规划一个 [城市] 的 [天数] 日游"
+
+当然，你也可以直接问我任何旅行相关的问题！`
+
+  const suggestions = [
+    '我想去汕头玩2天',
+    '五一假期有什么推荐？',
+    '推荐一个适合情侣的周末旅行',
+    '两个人去成都大概要花多少钱？',
+  ]
+
+  return { reply, suggestions, tripData: null }
 }
 
 export const useTripStore = create<TripStore>()(
@@ -139,7 +332,7 @@ export const useTripStore = create<TripStore>()(
             timeoutId = setTimeout(() => controller.abort(), 15000)
 
             // 优先调用辩论 API
-            const res = await fetch('/api/debate', {
+            const res = await fetch('/.netlify/functions/debate', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ message: trimmedContent, sessionId: get().sessionId }),
@@ -187,18 +380,19 @@ export const useTripStore = create<TripStore>()(
             const delay = 1500 + Math.random() * 1000
             await new Promise((r) => setTimeout(r, delay))
 
-            const aiContent = getMockAIReply(trimmedContent)
+            const mockResult = getMockAIResult(trimmedContent)
             const aiMsg: ChatMessage = {
               id: generateId(),
               role: 'assistant',
-              content: aiContent,
+              content: mockResult.reply,
               timestamp: now(),
             }
 
             set((state) => ({
               messages: [...state.messages, aiMsg],
               isGenerating: false,
-              suggestions: getSuggestions(trimmedContent),
+              suggestions: mockResult.suggestions,
+              currentTrip: mockResult.tripData || state.currentTrip,
               debateResult: null,
             }))
           }
@@ -285,5 +479,5 @@ export const useTripStore = create<TripStore>()(
   )
 )
 
-/** 导出建议追问获取函数，供组件使用 */
-export { getSuggestions }
+/** 导出 getMockAIResult 供外部使用（如测试） */
+export { getMockAIResult }
