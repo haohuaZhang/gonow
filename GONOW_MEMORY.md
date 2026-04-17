@@ -3,13 +3,15 @@
 > **每次开发前必读，每次开发后必更新**
 
 ## 当前状态
-- 阶段：Phase 8 - 全面打磨 + 真实数据 + 部署上线（已完成）
+- 阶段：Phase 9 - 待完成事项开发（规划中）
 - 最后更新：2026-04-17
-- 当前任务：Mock数据真实化 + 功能测试修复 + Netlify部署成功
+- 当前任务：制定 Phase 9 开发计划，完成度从 92% 提升到 100%
 - 线上地址：https://gonow-travel.netlify.app
 - GitHub：https://github.com/haohuaZhang/gonow
-- PRD 版本：V3.1 功能打磨版
+- PRD 文档：docs/GoNow-PRD-V3.1-Full.docx
+- PRD 版本：V3.1 功能打磨版（含 Phase 9 开发计划）
 - 架构版本：V2.0（7 Agent 全激活版）
+- 产品完成度：92%（13/15 核心功能完整实现）
 
 ## 项目概览
 - **产品名称**：GoNow 智能旅行规划助手
@@ -115,6 +117,7 @@
 - [x] **Phase 8A Netlify部署**（2026-04-17）- GitHub推送+Netlify站点创建+环境变量配置+构建修复(uuid→crypto.randomUUID)+部署成功
 - [x] **Phase 8B Mock对话智能升级**（2026-04-17）- API路由修复(/.netlify/functions/debate)+前端Mock重写(30城市描述+7地区别名+4场景智能回复+mockTrip数据返回)+detectPeopleInfo正则修复
 - [x] **Phase 8C Mock数据真实化**（2026-04-17）- 美食4→12道(汕头+成都+长沙)+景点2→22个(6城市)+评价10→20条+目的地数据优化+DEPLOY.md完整重写，所有环境变量名与代码匹配
+- [x] **Phase 8D 文档体系完善**（2026-04-17）- 创建 docs/GoNow-PRD-V3.1-Full.docx（8章节完整PRD）+ prd-audit-report.md（需求对照审计）+ DEPLOY.md重写（含API Key申请指引）+ 所有指导文件同步更新
 
 ## 技术决策记录
 - 决策1：选择 React + Vite 而非 Next.js（2026-04-15）- 原因：纯 SPA 更简单，部署到 Netlify 免费额度足够
@@ -139,61 +142,96 @@
 /workspace/gonow/                        # 项目根目录
 ├── ARCHITECTURE.md                      # 多Agent协作架构方案 V2.0
 ├── GONOW_MEMORY.md                      # 本文件 - 项目记忆
-├── netlify.toml                         # Netlify 配置（build + functions）
-├── index.html                           # HTML 入口（lang=zh-CN）
-├── vite.config.ts                       # Vite 配置（含 tailwindcss 插件 + @ 路径别名）
-├── tsconfig.json                        # TypeScript 根配置
-├── tsconfig.app.json                    # TypeScript 应用配置
-├── components.json                      # shadcn/ui 配置
+├── DEPLOY.md                            # 部署指引（含 API Key 申请教程）
+├── netlify.toml                         # Netlify 配置
+├── index.html                           # HTML 入口
+├── vite.config.ts                       # Vite 配置
+├── package.json                         # 依赖管理
+├── .env.example                         # 环境变量模板
 ├── docs/
-│   └── api-contracts.md                 # API 接口契约文档
-├── src/                                 # 源代码
+│   ├── GoNow-PRD-V3.1-Full.docx        # 产品需求文档 V3.1（含 Phase 9 开发计划）
+│   ├── api-contracts.md                 # API 接口契约文档
+│   └── prd-audit-report.md              # PRD 需求实现对照审计报告
+├── src/
 │   ├── main.tsx                         # 应用入口
-│   ├── App.tsx                          # 根组件（路由：/ /chat /trip）
-│   ├── index.css                        # 全局样式（Tailwind v4 + shadcn CSS 变量）
+│   ├── App.tsx                          # 根组件（路由配置）
+│   ├── index.css                        # 全局样式
 │   ├── components/
 │   │   ├── ui/                          # shadcn/ui 组件（12个）
-│   │   ├── layout/
-│   │   │   └── AppLayout.tsx            # 应用布局（Header + 导航 + 移动端菜单）
-│   │   ├── chat/
-│   │   │   └── ChatPanel.tsx            # AI 对话面板（消息气泡+欢迎语+建议追问+思考动画）
-│   │   ├── trip/
-│   │   │   ├── ActivityIcon.tsx         # 活动类型图标（5种类型 emoji+颜色）
-│   │   │   ├── ActivityCard.tsx         # 活动卡片（图标+名称+描述+时间+费用+评分+红旗）
-│   │   │   ├── DayCard.tsx              # 日程卡片（日期头+活动列表+时间线）
-│   │   │   └── TripOverview.tsx         # 行程总览（概览+预算+Day Tabs+DayCard）
-│   │   ├── map/                         # 地图相关组件（待开发）
-│   │   └── food/                        # 美食推荐相关组件（待开发）
-│   ├── hooks/                           # 自定义 Hooks（待开发）
-│   ├── lib/
-│   │   ├── utils.ts                     # 工具函数（cn 等）
-│   │   └── mock-data.ts                 # Mock 数据（汕头2日游）
-│   ├── types/
-│   │   └── index.ts                     # 核心类型定义
+│   │   ├── layout/AppLayout.tsx         # 应用布局（Header+导航+Footer+移动端）
+│   │   ├── chat/ChatPanel.tsx           # AI 对话面板（消息+欢迎语+建议+辩论标签）
+│   │   ├── trip/                        # 行程组件
+│   │   │   ├── TripOverview.tsx         # 行程总览
+│   │   │   ├── DayCard.tsx              # 日程卡片
+│   │   │   ├── ActivityCard.tsx         # 活动卡片
+│   │   │   ├── ActivityIcon.tsx         # 活动图标
+│   │   │   ├── ReplaceActivityDialog.tsx # 替换活动
+│   │   │   ├── BudgetBreakdown.tsx      # 预算分解
+│   │   │   ├── WeatherBar.tsx           # 天气栏
+│   │   │   ├── ShareTripDialog.tsx      # 分享弹窗
+│   │   │   ├── TripPDFExport.tsx        # PDF导出
+│   │   │   ├── PrintStyles.tsx          # 打印样式
+│   │   │   └── ScenicPlanCard.tsx       # 景点方案卡片
+│   │   ├── food/                        # 美食组件
+│   │   │   ├── FoodStoryCard.tsx        # 美食故事卡片
+│   │   │   └── FoodRecommendList.tsx    # 美食列表
+│   │   ├── destination/                 # 目的地组件
+│   │   │   ├── DestinationGrid.tsx      # 目的地网格
+│   │   │   ├── DestinationCard.tsx      # 目的地卡片
+│   │   │   └── DestinationDetail.tsx    # 目的地详情
+│   │   ├── review/                      # 评价组件
+│   │   │   ├── StarRating.tsx           # 星级评分
+│   │   │   ├── ReviewCard.tsx           # 评价卡片
+│   │   │   ├── ReviewList.tsx           # 评价列表
+│   │   │   └── WriteReviewDialog.tsx    # 写评价弹窗
+│   │   ├── map/TripMap.tsx              # 高德地图组件
+│   │   ├── onboarding/OnboardingGuide.tsx # 新手引导
+│   │   ├── ErrorBoundary.tsx            # 错误边界
+│   │   └── LoadingSpinner.tsx           # 加载动画
+│   ├── pages/                           # 页面组件
+│   │   ├── HomePage.tsx                 # 首页
+│   │   ├── ChatPage.tsx                 # 对话页
+│   │   ├── TripPage.tsx                 # 行程页
+│   │   ├── FoodPage.tsx                 # 美食页
+│   │   ├── ScenicPage.tsx               # 景点页
+│   │   ├── DestinationPage.tsx          # 目的地页
+│   │   └── SharedTripPage.tsx           # 分享行程页
 │   ├── stores/
-│   │   └── tripStore.ts                 # Zustand 状态管理（对话+行程）
-│   └── pages/
-│       ├── HomePage.tsx                 # 首页（产品介绍 + 功能卡片）
-│       ├── ChatPage.tsx                 # 对话页（AI 对话界面）
-│       └── TripPage.tsx                 # 行程页（行程总览展示）
-├── netlify/
-│   └── functions/
-│       ├── chat.js                      # /api/chat Mock 对话接口
-│       └── generate-trip.js             # /api/generate-trip Mock 行程生成接口
-└── public/                              # 静态资源
+│   │   ├── tripStore.ts                 # 行程+对话状态管理
+│   │   └── reviewStore.ts               # 评价状态管理
+│   ├── lib/
+│   │   ├── mock-data.ts                 # 行程 Mock 数据
+│   │   ├── mock-food-data.ts            # 美食 Mock 数据（12道）
+│   │   ├── mock-scenic-data.ts          # 景点 Mock 数据（22个）
+│   │   ├── mock-destination-data.ts     # 目的地 Mock 数据（12个）
+│   │   ├── mock-review-data.ts          # 评价 Mock 数据（20条）
+│   │   ├── share-utils.ts               # 分享工具函数
+│   │   ├── storage.ts                   # 存储工具函数
+│   │   └── utils.ts                     # 通用工具函数
+│   └── types/index.ts                   # 核心类型定义
+├── netlify/functions/
+│   ├── chat.js                          # AI 对话 API
+│   ├── debate.js                        # 多LLM 辩论 API
+│   ├── generate-trip.js                 # 行程生成 API
+│   └── weather.js                       # 天气 API
+└── public/
+    ├── manifest.json                    # PWA 配置
+    ├── favicon.svg                      # 网站图标
+    └── icon.svg                         # 应用图标
 ```
 
 ## API 接口记录
 | 接口 | 方法 | 用途 | 状态 |
 |------|------|------|------|
-| /api/chat | POST | AI 对话（Mock模式） | ✅ 已实现 |
-| /api/generate-trip | POST | 生成完整行程（Mock模式） | ✅ 已实现 |
-| /api/food/search | POST | 美食搜索 | 待开发 |
-| /api/scenic/plans | POST | 景点多方案规划 | 待开发 |
-| /api/weather | GET | 天气数据 | 待开发 |
-| /api/geocode | GET | 地理编码 | 待开发 |
-| /api/route | POST | 路线规划 | 待开发 |
-| /api/share/:token | GET | 分享链接查看 | 待开发 |
+| /.netlify/functions/chat | POST | AI 对话（Claude+辩论+Mock三级降级） | ✅ 已实现 |
+| /.netlify/functions/debate | POST | 多LLM辩论验证（智谱+DeepSeek+Gemini） | ✅ 已实现 |
+| /.netlify/functions/generate-trip | POST | 生成完整行程 | ✅ 已实现 |
+| /.netlify/functions/weather | GET | 天气数据（和风天气+Mock降级） | ✅ 已实现 |
+| /api/food/search | POST | 美食搜索 | ❌ 待开发（Phase 9B） |
+| /api/scenic/plans | POST | 景点多方案规划 | ❌ 待开发（Phase 9B） |
+| /api/geocode | GET | 地理编码 | ❌ 待开发（前端用高德JS API替代） |
+| /api/route | POST | 路线规划 | ❌ 待开发（前端用Polyline替代） |
+| /api/share/:token | GET | 分享链接查看 | ❌ 待开发（Phase 9C） |
 
 ## 数据模型
 - **User**: id, email, nickname, avatar, preferences(UserPreferences), createdAt
@@ -206,9 +244,35 @@
 - **ChatSession**: id, title, messages(ChatMessage[]), tripId
 - **FoodRecommendation**: id, name, cuisine, avgCost, rating, story, redBlackFlags, location, signatureDishes
 
-## 下一步计划
-- [ ] 接入真实高德 JS API 替换地图占位组件
-- [ ] 接入真实 LLM API（Claude）替换 Mock 对话
-- [ ] 接入真实天气 API（和风天气）替换 Mock 天气
-- [ ] 部署到 Netlify
-- [ ] Lighthouse 性能优化（代码分割，当前 JS 535KB）
+## 下一步计划 - Phase 9（待完成事项开发）
+
+### Phase 9A: PWA 完整支持
+- [ ] 9.1 安装 vite-plugin-pwa，配置 Service Worker（precache + runtime cache）
+- [ ] 9.2 生成 PWA 图标文件（icon-192.png + icon-512.png）
+
+### Phase 9B: 搜索与筛选
+- [ ] 9.3 美食页搜索功能（基于 Mock 数据前端模糊搜索）
+- [ ] 9.4 景点页筛选功能（按城市/类型/预算筛选）
+
+### Phase 9C: 后端补全
+- [ ] 9.5 分享行程后端存储（/api/share + Netlify KV）
+- [ ] 9.6 高德地图安全密钥环境变量化
+
+### Phase 9D: 质量保障
+- [ ] 9.7 自定义 Hooks 抽取（useChat/useWeather/useMap）
+- [ ] 9.8 单元测试框架搭建（Vitest）
+- [ ] 9.9 E2E 测试框架搭建（Playwright）
+- [ ] 9.10 Lighthouse 性能优化（目标 > 80）
+
+### Phase 9E: 正式发布
+- [ ] 9.11 全面回归测试
+- [ ] 9.12 正式发布 V1.0
+
+### 里程碑
+| 里程碑 | 任务 | 目标 |
+|--------|------|------|
+| M1: PWA 完整支持 | 9.1 + 9.2 | 可安装+离线访问 |
+| M2: 搜索与筛选 | 9.3 + 9.4 | 美食搜索+景点筛选 |
+| M3: 后端补全 | 9.5 + 9.6 | 跨设备分享+安全加固 |
+| M4: 质量保障 | 9.7-9.10 | 测试覆盖+性能优化 |
+| M5: 正式发布 | 9.11 + 9.12 | 完成度100% |
