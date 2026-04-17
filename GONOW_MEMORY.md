@@ -3,15 +3,15 @@
 > **每次开发前必读，每次开发后必更新**
 
 ## 当前状态
-- 阶段：Phase 9 - 待完成事项开发（已完成 9A-9C）
+- 阶段：Phase 9 - 线上全面测试与修复（已完成）
 - 最后更新：2026-04-17
-- 当前任务：Phase 9A-9C 已完成，待部署验证
+- 当前任务：所有功能测试通过，无待处理 Bug
 - 线上地址：https://gonow-travel.netlify.app
 - GitHub：https://github.com/haohuaZhang/gonow
 - PRD 文档：docs/GoNow-PRD-V3.1-Full.docx
 - PRD 版本：V3.1 功能打磨版（含 Phase 9 开发计划）
 - 架构版本：V2.0（7 Agent 全激活版）
-- 产品完成度：97%（PWA完整+搜索筛选+分享后端+安全加固）
+- 产品完成度：98%（13个目的地+PWA完整+搜索筛选+分享后端+安全加固）
 
 ## 项目概览
 - **产品名称**：GoNow 智能旅行规划助手
@@ -223,6 +223,20 @@
 - **原因**：Netlify 新版环境变量 API 需要通过专门的端点 `/accounts/:id/env`，且免费账户可能不支持
 - **修复**：改为在 Netlify 控制台手动添加环境变量
 - **教训**：Netlify API 的环境变量管理比较复杂，新版 API 与旧版不兼容。最可靠的方式还是通过 Web 控制台操作
+
+### 错误 #11：index.html 手动引用 manifest.json 与 vite-plugin-pwa 自动注入冲突
+- **时间**：Phase 9 线上测试
+- **现象**：浏览器控制台报 `manifest.json 404`，PWA 安装提示不出现
+- **原因**：`index.html` 中手动写了 `<link rel="manifest" href="/manifest.json" />`，但 vite-plugin-pwa 自动生成的是 `manifest.webmanifest`，路径不匹配
+- **修复**：删除 `index.html` 中的手动 manifest 引用，让 vite-plugin-pwa 自动注入。同时修正 `theme-color` 从 `#000000` 改为品牌色 `#FF6B35`
+- **教训**：使用 vite-plugin-pwa 时，不要在 HTML 中手动添加 manifest link，插件会在构建时自动注入。如果之前有手动引用，记得删除
+
+### 错误 #12：目的地搜索"三亚"返回0结果
+- **时间**：Phase 9 线上测试
+- **现象**：在目的地推荐页搜索"三亚"，显示"没有找到匹配的目的地"
+- **原因**：三亚不在 `mock-destination-data.ts` 的目的地列表中（只有12个城市），搜索逻辑本身没问题
+- **修复**：在 mock 数据中添加三亚的完整数据（id、name、province、tags、highlights 等）
+- **教训**：搜索功能返回空结果时，先确认是搜索逻辑问题还是数据缺失问题。Mock 数据需要覆盖热门目的地
 
 ## 文件结构索引
 ```
