@@ -216,6 +216,20 @@ const KNOWN_CITIES = [
   '东京', '首尔', '曼谷', '新加坡', '巴黎', '伦敦', '纽约', '罗马',
 ];
 
+// 地区别名映射（用户可能说地区名而非具体城市）
+const REGION_ALIASES = {
+  '潮汕': '汕头',
+  '长三角': '杭州',
+  '珠三角': '广州',
+  '京津冀': '北京',
+  '闽南': '厦门',
+  '胶东': '青岛',
+  '川西': '成都',
+  '湘西': '长沙',
+  '滇西': '昆明',
+  '海外': '东京',
+};
+
 // ============ 辅助函数 ============
 
 /**
@@ -237,6 +251,13 @@ function generateSessionId() {
  * @returns {string|null} - 匹配到的城市名，未匹配返回 null
  */
 function detectCity(message) {
+  // 先匹配地区别名（如"潮汕"→"汕头"）
+  for (const [region, city] of Object.entries(REGION_ALIASES)) {
+    if (message.includes(region)) {
+      return city;
+    }
+  }
+  // 再匹配具体城市名
   for (const city of KNOWN_CITIES) {
     if (message.includes(city)) {
       return city;
@@ -271,8 +292,8 @@ function hasTravelerInfo(message) {
   const travelerPatterns = [
     /\d+[人个位]/,
     /一个人|两个人|三个人|四个人|五个人/,
-    /情侣|家庭|朋友|同事|亲子|带娃|带小孩|带老人/,
-    /全家|一家/,
+    /情侣|夫妻|老婆|老公|家庭|朋友|同事|亲子|带娃|带小孩|带老人/,
+    /全家|一家|和我|跟我/,
   ];
   return travelerPatterns.some((pattern) => pattern.test(message));
 }
@@ -560,14 +581,23 @@ const handler = async (event) => {
       }
     } else {
       // 无 API Key，使用 Mock 模式
+      const city = detectCity(message);
+      const hasDate = hasDateInfo(message);
+      const hasTravelers = hasTravelerInfo(message);
+
       if (!sessionId) {
-        // 场景 1：第一次对话（无 sessionId）
-        result = handleFirstChat();
+        // 场景 1：第一次对话
+        if (city && hasDate && hasTravelers) {
+          // 第一次对话就包含完整信息
+          result = handleCompleteInfo(city, generateSessionId());
+        } else if (city) {
+          // 第一次对话包含城市名
+          result = handleCityDetected(city, generateSessionId());
+        } else {
+          // 第一次对话无城市信息
+          result = handleFirstChat();
+        }
       } else {
-        // 场景 2-4：已有会话
-        const city = detectCity(message);
-        const hasDate = hasDateInfo(message);
-        const hasTravelers = hasTravelerInfo(message);
 
         if (city && hasDate && hasTravelers) {
           // 场景 3：包含完整信息（城市 + 日期 + 人数）
