@@ -3,14 +3,36 @@
  * 根据用户偏好智能推荐目的地
  * 支持搜索、筛选、排序、详情查看
  */
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import DestinationGrid from '@/components/destination/DestinationGrid'
 import DestinationDetail from '@/components/destination/DestinationDetail'
 import { mockDestinations } from '@/lib/mock-destination-data'
 import type { Destination } from '@/types'
 
 export default function DestinationPage() {
+  // 动态数据 + mock 回退：优先从 API 加载数据，失败时使用 mock 数据
+  const [destinations, setDestinations] = useState<Destination[]>(mockDestinations)
+  const [loading, setLoading] = useState(false)
   const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    setLoading(true)
+
+    fetch('/.netlify/functions/fetch-trending?type=destinations', { signal: controller.signal })
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && json.data?.destinations) {
+          setDestinations(json.data.destinations)
+        }
+      })
+      .catch((err) => {
+        if (err.name !== 'AbortError') console.warn('Failed to fetch destinations, using mock data:', err)
+      })
+      .finally(() => setLoading(false))
+
+    return () => controller.abort()
+  }, [])
 
   return (
     <div className="flex flex-col gap-6">
@@ -37,10 +59,17 @@ export default function DestinationPage() {
           onBack={() => setSelectedDestination(null)}
         />
       ) : (
-        <DestinationGrid
-          destinations={mockDestinations}
-          onSelect={(dest) => setSelectedDestination(dest)}
-        />
+        <>
+          {loading && (
+            <div className="text-center text-sm py-2" style={{ color: 'var(--gonow-text-secondary)' }}>
+              加载中...
+            </div>
+          )}
+          <DestinationGrid
+            destinations={destinations}
+            onSelect={(dest) => setSelectedDestination(dest)}
+          />
+        </>
       )}
     </div>
   )

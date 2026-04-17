@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import ScenicPlanCompare from '@/components/trip/ScenicPlanCompare'
 import { mockScenicPlans } from '@/lib/mock-scenic-data'
+import type { ScenicPlanData } from '@/lib/mock-scenic-data'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 
 /**
@@ -8,12 +9,34 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
  * 展示多个景点的多方案规划对比，支持城市和方案类型筛选
  */
 export default function ScenicPage() {
+  // 动态数据 + mock 回退：优先从 API 加载数据，失败时使用 mock 数据
+  const [scenicPlans, setScenicPlans] = useState<ScenicPlanData[]>(mockScenicPlans)
+  const [loading, setLoading] = useState(false)
   const [cityFilter, setCityFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
 
+  useEffect(() => {
+    const controller = new AbortController()
+    setLoading(true)
+
+    fetch('/.netlify/functions/fetch-trending?type=scenic', { signal: controller.signal })
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && json.data?.scenic) {
+          setScenicPlans(json.data.scenic)
+        }
+      })
+      .catch((err) => {
+        if (err.name !== 'AbortError') console.warn('Failed to fetch scenic plans, using mock data:', err)
+      })
+      .finally(() => setLoading(false))
+
+    return () => controller.abort()
+  }, [])
+
   // 综合过滤：城市 + 方案类型
   const filteredScenicPlans = useMemo(() => {
-    let result = mockScenicPlans
+    let result = scenicPlans
 
     // 城市筛选
     if (cityFilter !== 'all') {
@@ -31,7 +54,7 @@ export default function ScenicPage() {
     }
 
     return result
-  }, [cityFilter, typeFilter])
+  }, [cityFilter, typeFilter, scenicPlans])
 
   return (
     <div className="space-y-8">
@@ -52,6 +75,11 @@ export default function ScenicPage() {
       </div>
 
       {/* 筛选栏 */}
+      {loading && (
+        <div className="text-center text-sm py-2" style={{ color: 'var(--gonow-text-secondary)' }}>
+          加载中...
+        </div>
+      )}
       <div className="flex gap-3 mb-6 flex-wrap">
         <Select value={cityFilter} onValueChange={setCityFilter}>
           <SelectTrigger className="w-36">
