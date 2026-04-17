@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GoNow - 智能旅行规划助手</title>
+    <!-- PWA 配置 -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="GoNow" />
+    <meta name="description" content="GoNow - AI 驱动的智能旅行规划助手" />
+    <meta property="og:title" content="GoNow 智能旅行规划助手" />
+    <meta property="og:description" content="AI 驱动的智能旅行规划平台，红黑榜多源验证，故事化美食推荐" />
+    <meta property="og:type" content="website" />
+    <!-- 高德地图安全配置 -->
+    <script>
+      window._AMapSecurityConfig = {
+        securityJsCode: 'c99af440040610af267ca4ef66fa3edd',
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
