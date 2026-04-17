@@ -7,7 +7,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import type { Activity, ChatMessage, DebateResult, Trip } from '@/types'
 import { createProtectedStateStorage } from '@/lib/storage'
-import { mockTrip } from '@/lib/mock-data'
+import { mockTrips } from '@/lib/mock-data'
 
 /** Store 状态接口 */
 interface TripStore {
@@ -212,8 +212,10 @@ function getMockAIResult(userContent: string): { reply: string; suggestions: str
       `${city}有什么特色美食？`,
     ]
 
+    const template = mockTrips[Math.floor(Math.random() * mockTrips.length)]
+
     const tripData: Trip = {
-      ...mockTrip,
+      ...template,
       id: generateId(),
       destination: city,
       description: `${city}旅行行程`,

@@ -235,6 +235,8 @@ export interface FoodRecommendation {
   imageUrl?: string;
   /** 所属城市 */
   city?: string;
+  /** 当季热门理由 */
+  trendingReason?: string;
 }
 
 // ============ 通用类型 ============
@@ -331,4 +333,5 @@ export interface Destination {
   cultureScore: number   // 文化评分 1-5
   transportScore: number // 交通评分 1-5
   costScore: number      // 性价比评分 1-5
+  trendingReason?: string // 当季热门理由
 }

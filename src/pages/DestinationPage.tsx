@@ -19,15 +19,24 @@ export default function DestinationPage() {
     const controller = new AbortController()
     setLoading(true)
 
-    fetch('/.netlify/functions/fetch-trending?type=destinations', { signal: controller.signal })
+    fetch('/.netlify/functions/fetch-trending', { signal: controller.signal })
       .then((res) => res.json())
       .then((json) => {
-        if (json.success && json.data?.destinations) {
-          setDestinations(json.data.destinations)
+        if (json.success && json.data) {
+          const { destinationRank, trendingDestinations } = json.data
+          if (destinationRank && trendingDestinations) {
+            const sorted = [...mockDestinations]
+              .map((dest) => ({
+                ...dest,
+                trendingReason: trendingDestinations[dest.id] || dest.trendingReason,
+              }))
+              .sort((a, b) => (destinationRank[a.id] ?? 999) - (destinationRank[b.id] ?? 999))
+            setDestinations(sorted)
+          }
         }
       })
       .catch((err) => {
-        if (err.name !== 'AbortError') console.warn('Failed to fetch destinations, using mock data:', err)
+        if (err.name !== 'AbortError') console.warn('Failed to fetch trending data, using mock data:', err)
       })
       .finally(() => setLoading(false))
 

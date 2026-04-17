@@ -16,15 +16,24 @@ export default function FoodPage() {
     const controller = new AbortController()
     setLoading(true)
 
-    fetch('/.netlify/functions/fetch-trending?type=food', { signal: controller.signal })
+    fetch('/.netlify/functions/fetch-trending', { signal: controller.signal })
       .then((res) => res.json())
       .then((json) => {
-        if (json.success && json.data?.food) {
-          setFoods(json.data.food)
+        if (json.success && json.data) {
+          const { foodCityRank, trendingFoodCities } = json.data
+          if (foodCityRank && trendingFoodCities) {
+            const sorted = [...mockFoods]
+              .map((food) => ({
+                ...food,
+                trendingReason: trendingFoodCities[food.city || ''] || food.trendingReason,
+              }))
+              .sort((a, b) => (foodCityRank[a.city || ''] ?? 999) - (foodCityRank[b.city || ''] ?? 999))
+            setFoods(sorted)
+          }
         }
       })
       .catch((err) => {
-        if (err.name !== 'AbortError') console.warn('Failed to fetch foods, using mock data:', err)
+        if (err.name !== 'AbortError') console.warn('Failed to fetch trending data, using mock data:', err)
       })
       .finally(() => setLoading(false))
 
