@@ -1,0 +1,1 @@
+import{c as e}from"./dist-0L0ZExye.js";function t(t){return e(19)?t:t?`true`:void 0}export{t};

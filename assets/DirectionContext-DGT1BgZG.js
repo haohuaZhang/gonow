@@ -1,0 +1,1 @@
+import{G as e,U as t}from"./dist-0L0ZExye.js";var n=e(t()),r=n.createContext(void 0);function i(){return n.useContext(r)?.direction??`ltr`}export{i as t};

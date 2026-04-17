@@ -1,0 +1,1 @@
+import{G as e,U as t}from"./dist-0L0ZExye.js";var n=e(t());function r({controlled:e,default:t,name:r,state:i=`value`}){let{current:a}=n.useRef(e!==void 0),[o,s]=n.useState(t);return[a?e:o,n.useCallback(e=>{a||s(e)},[])]}export{r as t};
