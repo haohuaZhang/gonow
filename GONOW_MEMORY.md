@@ -3,9 +3,11 @@
 > **每次开发前必读，每次开发后必更新**
 
 ## 当前状态
-- 阶段：Phase 7 - 真实 API 接入（已完成）
+- 阶段：Phase 8 - 全面打磨 + 真实数据 + 部署上线（已完成）
 - 最后更新：2026-04-17
-- 当前任务：所有 API 已接入（高德地图+和风天气+智谱+DeepSeek+Gemini），构建通过
+- 当前任务：Mock数据真实化 + 功能测试修复 + Netlify部署成功
+- 线上地址：https://gonow-travel.netlify.app
+- GitHub：https://github.com/haohuaZhang/gonow
 - PRD 版本：V3.1 功能打磨版
 - 架构版本：V2.0（7 Agent 全激活版）
 
@@ -109,7 +111,10 @@
 - [x] **Phase 7B 多LLM辩论系统**（2026-04-17）- debate.js API端点（并行调用智谱GLM-4-Flash/DeepSeek V3/Gemini Flash+10s超时+辩论验证阶段+置信度计算+共识评估+Mock降级）+ chat.js集成（免费LLM>Claude>Mock优先级）+ tripStore集成（debateResult状态+15s超时）+ ChatPanel辩论验证标签（模型数+置信度进度条+共识状态+展开查看各模型回答）
 - [ ] **Phase 7C 和风天气接入**（待用户提供API Key）
 - [x] **Phase 7C 和风天气接入**（2026-04-17）- API Key 已配置到 .env（WEATHER_API_KEY），weather.js 已有完整调用逻辑（GeoAPI城市搜索+7天预报+Mock降级），无需修改代码
-- [x] **Phase 7D API Key 全量配置**（2026-04-17）- .env 配置 5 个 API Key：高德地图(VITE_AMAP_KEY)+和风天气(WEATHER_API_KEY)+智谱(ZHIPU_API_KEY)+DeepSeek(DEEPSEEK_API_KEY)+Gemini(GEMINI_API_KEY)，所有环境变量名与代码匹配
+- [x] **Phase 7D API Key 全量配置**（2026-04-17）- .env 配置 5 个 API Key：高德地图(VITE_AMAP_KEY)+和风天气(WEATHER_API_KEY)+智谱(ZHIPU_API_KEY)+DeepSeek(DEEPSEEK_API_KEY)+Gemini(GEMINI_API_KEY)
+- [x] **Phase 8A Netlify部署**（2026-04-17）- GitHub推送+Netlify站点创建+环境变量配置+构建修复(uuid→crypto.randomUUID)+部署成功
+- [x] **Phase 8B Mock对话智能升级**（2026-04-17）- API路由修复(/.netlify/functions/debate)+前端Mock重写(30城市描述+7地区别名+4场景智能回复+mockTrip数据返回)+detectPeopleInfo正则修复
+- [x] **Phase 8C Mock数据真实化**（2026-04-17）- 美食4→12道(汕头+成都+长沙)+景点2→22个(6城市)+评价10→20条+目的地数据优化+DEPLOY.md完整重写，所有环境变量名与代码匹配
 
 ## 技术决策记录
 - 决策1：选择 React + Vite 而非 Next.js（2026-04-15）- 原因：纯 SPA 更简单，部署到 Netlify 免费额度足够
