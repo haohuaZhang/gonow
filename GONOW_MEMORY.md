@@ -3,15 +3,15 @@
 > **每次开发前必读，每次开发后必更新**
 
 ## 当前状态
-- 阶段：Phase 9 - 线上全面测试与修复（已完成）
+- 阶段：Phase 10 - 数据真实化与动态推荐（进行中）
 - 最后更新：2026-04-17
-- 当前任务：所有功能测试通过，无待处理 Bug
+- 当前任务：Mock数据全面扩充完成，待Netlify配额恢复后部署验证
 - 线上地址：https://gonow-travel.netlify.app
 - GitHub：https://github.com/haohuaZhang/gonow
 - PRD 文档：docs/GoNow-PRD-V3.1-Full.docx
 - PRD 版本：V3.1 功能打磨版（含 Phase 9 开发计划）
 - 架构版本：V2.0（7 Agent 全激活版）
-- 产品完成度：98%（13个目的地+PWA完整+搜索筛选+分享后端+安全加固）
+- 产品完成度：99%（32目的地+32美食+34景点+52评价+10行程模板+动态排名API+PWA）
 
 ## 项目概览
 - **产品名称**：GoNow 智能旅行规划助手
@@ -121,6 +121,9 @@
 - [x] **Phase 9A PWA 完整支持**（2026-04-17）- vite-plugin-pwa + Workbox（56条预缓存+高德/天气API运行时缓存）+ icon-192/512.png + registerSW自动更新 + 删除旧manifest.json
 - [x] **Phase 9B 搜索与筛选**（2026-04-17）- 美食搜索（模糊匹配name/story/cuisine+城市筛选）+ 景点筛选（城市+方案类型）+ 新增Select UI组件 + 空状态提示
 - [x] **Phase 9C 后端补全**（2026-04-17）- /api/share 分享行程后端（POST创建+GET获取+隐私过滤）+ 高德安全密钥环境变量化（%VITE_AMAP_SECURITY_CODE%）
+- [x] **Phase 10A 动态数据推荐系统**（2026-04-17）- fetch-trending.js 季节性排名服务（不调用LLM，毫秒级响应）+ 前端API调用+Mock降级+热门理由模板（引用小红书/飞猪/携程）+ 目的地/美食按季节排序
+- [x] **Phase 10B Mock数据全面扩充**（2026-04-17）- 目的地13→32个（新增上海/广州/深圳/南京/武汉/哈尔滨/拉萨/张家界/黄山/九寨沟/泉州/洛阳/开封/扬州/凤凰古城/西双版纳/婺源/三亚/呼和浩特）+ 美食12→32道（覆盖19个城市）+ 景点22→34个（新增故宫/长城/外滩/豫园/黄鹤楼/黄山/张家界/凤凰古城/九寨沟/西双版纳/冰雪大世界/龙门石窟）+ 评价20→52条 + 行程模板1→10个
+- [x] **Phase 10C PWA缓存修复**（2026-04-17）- 添加 selfDestroying:true 强制旧SW销毁 + registerSW onNeedRefresh 回调提示用户刷新
 
 ## 技术决策记录
 - 决策1：选择 React + Vite 而非 Next.js（2026-04-15）- 原因：纯 SPA 更简单，部署到 Netlify 免费额度足够
@@ -238,6 +241,27 @@
 - **修复**：在 mock 数据中添加三亚的完整数据（id、name、province、tags、highlights 等）
 - **教训**：搜索功能返回空结果时，先确认是搜索逻辑问题还是数据缺失问题。Mock 数据需要覆盖热门目的地
 
+### 错误 #13：Netlify Function LLM 调用超时（502）
+- **时间**：Phase 10A 动态数据系统
+- **现象**：fetch-trending.js 调用 LLM API 生成热门数据，Netlify Function 返回 502
+- **原因**：Netlify Function 免费版执行时间限制 10 秒，LLM API 调用需要 30 秒+
+- **修复**：重写为季节性排名服务，不调用任何外部 API，纯本地计算，响应时间 < 100ms
+- **教训**：Netlify Function 免费版有严格的执行时间限制（10秒），不适合调用外部 API。如需调用，应使用 Durable Functions 或外部服务
+
+### 错误 #14：PWA Service Worker 缓存旧版本 JS
+- **时间**：Phase 10B 数据扩充后
+- **现象**：数据扩充推送后，线上页面仍显示旧数据（13个目的地而非32个）
+- **原因**：Workbox precache 缓存了旧的 JS chunk，新部署的 chunk hash 未变化（或 SW 未检测到更新）
+- **修复**：在 vite-plugin-pwa 配置中添加 `selfDestroying: true`，强制旧 SW 在检测到新版本时自动销毁
+- **教训**：PWA 的 Service Worker 缓存机制可能导致用户看到旧版本。使用 `selfDestroying: true` 可以确保新版本及时生效
+
+### 错误 #15：Netlify 账户 Build 配额耗尽
+- **时间**：Phase 10C 部署
+- **现象**：git push 后 Netlify 不触发新部署，手动触发返回 "Account credit usage exceeded"
+- **原因**：反复部署测试消耗了 Netlify 免费版每月 300 分钟 build 配额
+- **修复**：等待下月配额重置，或升级 Netlify 付费计划
+- **教训**：开发阶段应使用本地预览（`npx vite preview`）验证，减少不必要的线上部署次数
+
 ## 文件结构索引
 ```
 /workspace/gonow/                        # 项目根目录
@@ -301,11 +325,11 @@
 │   │   ├── tripStore.ts                 # 行程+对话状态管理
 │   │   └── reviewStore.ts               # 评价状态管理
 │   ├── lib/
-│   │   ├── mock-data.ts                 # 行程 Mock 数据
-│   │   ├── mock-food-data.ts            # 美食 Mock 数据（12道）
-│   │   ├── mock-scenic-data.ts          # 景点 Mock 数据（22个）
-│   │   ├── mock-destination-data.ts     # 目的地 Mock 数据（12个）
-│   │   ├── mock-review-data.ts          # 评价 Mock 数据（20条）
+│   │   ├── mock-data.ts                 # 行程 Mock 数据（10个模板）
+│   │   ├── mock-food-data.ts            # 美食 Mock 数据（32道，19城市）
+│   │   ├── mock-scenic-data.ts          # 景点 Mock 数据（34个，含类型定义）
+│   │   ├── mock-destination-data.ts     # 目的地 Mock 数据（32个）
+│   │   ├── mock-review-data.ts          # 评价 Mock 数据（52条）
 │   │   ├── share-utils.ts               # 分享工具函数
 │   │   ├── storage.ts                   # 存储工具函数
 │   │   └── utils.ts                     # 通用工具函数
@@ -314,7 +338,9 @@
 │   ├── chat.js                          # AI 对话 API
 │   ├── debate.js                        # 多LLM 辩论 API
 │   ├── generate-trip.js                 # 行程生成 API
-│   └── weather.js                       # 天气 API
+│   ├── weather.js                       # 天气 API
+│   ├── fetch-trending.js                # 季节性排名配置 API
+│   └── share.js                         # 分享行程存储 API
 └── public/
     ├── manifest.json                    # PWA 配置
     ├── favicon.svg                      # 网站图标
@@ -328,6 +354,8 @@
 | /.netlify/functions/debate | POST | 多LLM辩论验证（智谱+DeepSeek+Gemini） | ✅ 已实现 |
 | /.netlify/functions/generate-trip | POST | 生成完整行程 | ✅ 已实现 |
 | /.netlify/functions/weather | GET | 天气数据（和风天气+Mock降级） | ✅ 已实现 |
+| /.netlify/functions/fetch-trending | GET | 季节性排名配置（目的地/美食排序+热门理由） | ✅ 已实现 |
+| /.netlify/functions/share | GET/POST | 分享行程存储与获取 | ✅ 已实现 |
 | /api/food/search | POST | 美食搜索 | ❌ 待开发（Phase 9B） |
 | /api/scenic/plans | POST | 景点多方案规划 | ❌ 待开发（Phase 9B） |
 | /api/geocode | GET | 地理编码 | ❌ 待开发（前端用高德JS API替代） |
