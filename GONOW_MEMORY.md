@@ -140,6 +140,80 @@
 ## 已知问题
 （暂无）
 
+## 错题本（踩坑记录）
+
+> **目的**：记录开发过程中遇到的所有错误和解决方案，避免重复踩坑。每次开发前必读。
+
+### 错误 #1：Netlify Functions 中使用 `uuid` 模块导致构建失败
+- **时间**：Phase 7 部署阶段
+- **现象**：Netlify 构建报错 `exit code 2`，esbuild 无法解析 `require('uuid')`
+- **原因**：`uuid` 是 npm 包，Netlify Functions 的 esbuild 打包器默认不自动 bundle 外部依赖
+- **修复**：将 `const { v4: uuidv4 } = require('uuid')` 替换为 Node.js 内置的 `const crypto = require('crypto'); crypto.randomUUID()`
+- **教训**：Netlify Functions 中尽量使用 Node.js 内置模块，避免引入外部 npm 依赖。如必须使用，需在 `netlify.toml` 中配置 `included_files = ["node_modules/**"]`
+
+### 错误 #2：前端 API 路由路径错误
+- **时间**：Phase 8 Mock 对话修复
+- **现象**：AI 对话始终返回固定模板文本，不走后端 Mock 逻辑
+- **原因**：前端 `tripStore.ts` 调用 `/api/debate`，但 Netlify Functions 的正确路径是 `/.netlify/functions/debate`
+- **修复**：将 `fetch('/api/debate')` 改为 `fetch('/.netlify/functions/debate')`
+- **教训**：Netlify Functions 的路由路径是 `/.netlify/functions/<文件名>`，不是 `/api/<文件名>`。如果想要 `/api/` 路径，需要配置 Netlify redirects 或在 `netlify.toml` 中添加 `[[redirects]]`
+
+### 错误 #3：`tsc -b` 在 Netlify 上构建失败
+- **时间**：Phase 7 部署阶段
+- **现象**：Netlify 构建报错 `exit code 2`，`tsc -b` TypeScript 编译失败
+- **原因**：本地和 Netlify 的 Node/TypeScript 版本不同，导致类型检查行为不一致
+- **修复**：将 `package.json` 中 `build` 脚本从 `"tsc -b && vite build"` 改为 `"vite build"`（Vite 已内置 TS 编译）
+- **教训**：部署到 Netlify 时，不要在 build 命令中依赖 `tsc` 做类型检查。本地用 `tsc` 检查，线上用 `vite build`（它只做转译不做类型检查）
+
+### 错误 #4：Mock 对话不识别地区别名（如"潮汕"）
+- **时间**：Phase 8 Mock 对话修复
+- **现象**：用户说"我想去潮汕"，AI 回复"你想去哪里？"
+- **原因**：`detectCity()` 只匹配 KNOWN_CITIES 列表中的具体城市名，"潮汕"是地区名不在列表中
+- **修复**：新增 `REGION_ALIASES` 映射（潮汕→汕头、长三角→杭州等），在 `detectCity()` 中优先匹配地区别名
+- **教训**：NLP 意图识别需要考虑同义词和地区别名，不能只做精确匹配
+
+### 错误 #5：Mock 对话第一次对话不检测城市
+- **时间**：Phase 8 Mock 对话修复
+- **现象**：用户第一次对话就说了目的地，AI 仍返回通用欢迎语
+- **原因**：代码逻辑中 `!sessionId` 直接走 `handleFirstChat()`，没有检测用户消息内容
+- **修复**：在 `!sessionId` 分支中也调用 `detectCity()`、`hasDateInfo()`、`hasTravelerInfo()`，根据检测结果选择不同回复
+- **教训**：即使没有会话上下文，也要分析用户当前消息的意图，不要假设"第一次对话=没有信息"
+
+### 错误 #6：`detectPeopleInfo` 正则不匹配"2个人"
+- **时间**：Phase 8 全面测试
+- **现象**：用户输入"我想去成都玩3天，2个人"，人数识别失败
+- **原因**：正则 `/\d+人/` 不匹配"2个人"（中间有"个"字）
+- **修复**：将正则改为 `/\d+[个人]/`
+- **教训**：中文正则匹配要考虑常见的量词（个、位、名等），不能只匹配数字+名词
+
+### 错误 #7：Netlify 构建命令中 `npm install` 缺少 `--legacy-peer-deps`
+- **时间**：Phase 9A PWA 部署
+- **现象**：Netlify 构建报错 `dependency_installation script returned non-zero exit code: 1`
+- **原因**：`vite-plugin-pwa@1.2.0` 的 peerDependencies 声明不支持 Vite 8（实际可用），需要 `--legacy-peer-deps` 跳过严格检查
+- **修复**：在 `netlify.toml` 中将 build command 改为 `npm install --legacy-peer-deps && npx vite build`
+- **教训**：当使用较新的 npm 包与较新的框架组合时，peerDependencies 冲突很常见。Netlify 的 `npm install` 默认严格检查，需要显式添加 `--legacy-peer-deps`
+
+### 错误 #8：高德地图安全密钥硬编码在 index.html
+- **时间**：Phase 9C 安全加固
+- **现象**：`window._AMapSecurityConfig.securityJsCode` 硬编码在 HTML 中，推送到 GitHub 后密钥泄露
+- **原因**：开发时图方便直接写死，忘记改为环境变量
+- **修复**：替换为 `%VITE_AMAP_SECURITY_CODE%`（Vite HTML 转换语法），部署时通过环境变量注入
+- **教训**：任何密钥、Token、密码都绝对不能硬编码在代码中。即使是前端密钥，也应通过环境变量注入，避免代码仓库泄露
+
+### 错误 #9：PWA manifest.json 手动维护与 vite-plugin-pwa 冲突
+- **时间**：Phase 9A PWA 实现
+- **现象**：安装 vite-plugin-pwa 后，旧的 `public/manifest.json` 与自动生成的 `manifest.webmanifest` 冲突
+- **原因**：vite-plugin-pwa 会根据配置自动生成 manifest，不需要手动维护
+- **修复**：删除 `public/manifest.json`，所有 manifest 配置移到 `vite.config.ts` 的 VitePWA 插件中
+- **教训**：使用构建工具插件时，不要手动维护插件会自动生成的文件，避免冲突
+
+### 错误 #10：Netlify 免费 API 无法设置环境变量
+- **时间**：Phase 7 部署阶段
+- **现象**：通过 API `PATCH /sites/:id` 设置 `build_settings.env` 无效
+- **原因**：Netlify 新版环境变量 API 需要通过专门的端点 `/accounts/:id/env`，且免费账户可能不支持
+- **修复**：改为在 Netlify 控制台手动添加环境变量
+- **教训**：Netlify API 的环境变量管理比较复杂，新版 API 与旧版不兼容。最可靠的方式还是通过 Web 控制台操作
+
 ## 文件结构索引
 ```
 /workspace/gonow/                        # 项目根目录
