@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { HashRouter, Routes, Route } from 'react-router-dom'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import AppLayout from '@/components/layout/AppLayout'
 import LoadingSpinner from '@/components/LoadingSpinner'
@@ -19,13 +19,14 @@ const DestinationPage = lazy(() => import('@/pages/DestinationPage'))
  * 应用根组件
  * 配置 React Router 路由和全局 Provider
  * 使用 React.lazy + Suspense 实现路由级代码分割
+ * 使用 HashRouter 兼容 GitHub Pages 静态托管（无需服务端路由支持）
  */
 function App() {
   return (
     <>
       <OnboardingGuide />
       <TooltipProvider>
-        <BrowserRouter>
+        <HashRouter>
           <AppLayout>
             <ErrorBoundary>
               <Suspense fallback={<LoadingSpinner />}>
@@ -41,7 +42,7 @@ function App() {
               </Suspense>
             </ErrorBoundary>
           </AppLayout>
-        </BrowserRouter>
+        </HashRouter>
       </TooltipProvider>
     </>
   )

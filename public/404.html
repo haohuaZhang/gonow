@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>GoNow</title>
+  <script>
+    // GitHub Pages SPA redirect: 404.html → index.html with correct path
+    // This script runs on GitHub Pages when a sub-route is accessed directly
+    const path = window.location.pathname.replace(/\/gonow\/404\.html$/, '').replace(/\/gonow$/, '') || '/';
+    const segmentCount = (window.location.pathname.match(/\//g) || []).length;
+    const base = '/gonow/';
+    // Calculate the relative path from 404.html back to the root
+    const relativeBase = Array(segmentCount - 1).fill('..').join('/') || '.';
+    window.location.replace(relativeBase + base + '#' + path);
+  </script>
+</head>
+<body></body>
+</html>
