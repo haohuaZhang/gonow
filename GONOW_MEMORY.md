@@ -262,6 +262,14 @@
 - **修复**：等待下月配额重置，或升级 Netlify 付费计划
 - **教训**：开发阶段应使用本地预览（`npx vite preview`）验证，减少不必要的线上部署次数
 
+### 错误 #16：Select 下拉框点击崩溃（景点页/美食页）
+- **时间**：Phase 11 全功能测试
+- **现象**：点击景点页或美食页的城市筛选下拉框后，页面崩溃显示"页面出了点问题"错误页面
+- **原因**：`@base-ui/react` 1.4.0 的 `SelectPopup` 组件依赖 `SelectPositionerContext`，但 `select.tsx` 的 `SelectContent` 组件只用了 `Portal > Popup`，缺少了 `Positioner` 包裹层
+- **修复**：在 `SelectContent` 中添加 `SelectPrimitive.Positioner` 包裹 `SelectPrimitive.Popup`，层级变为 `Portal > Positioner > Popup`
+- **影响范围**：景点方案页、美食推荐页的所有 Select 下拉框
+- **教训**：升级 UI 库版本时，需检查组件层级结构是否发生变化。`@base-ui/react` 1.x 要求 Select 的 Popup 必须在 Positioner 内部
+
 ## 文件结构索引
 ```
 /workspace/gonow/                        # 项目根目录
